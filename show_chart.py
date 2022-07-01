@@ -3,6 +3,10 @@ import pandas as pd
 import streamlit as st
 from vega_datasets import data
 from datetime import datetime
+import sqlite3
+
+conn = sqlite3.connect("D:\\NSEDATA\\database\\bhavcopy.db") # or use :memory: to put it in RAM
+cursor = conn.cursor()
 
 
 COMMENT_TEMPLATE_MD = """{} - {}
@@ -21,6 +25,65 @@ st.set_page_config(layout="centered", page_icon="💬", page_title="Commenting a
 
 st.title("💬 Commenting app........>>>")
 
+op_data_base_sql = """SELECT SYMBOL, TIMESTAMP, OPTION_TYP, OI_ITM_PCT, OICHG_ITM_PCT, EXPIRY_DT FROM option_data WHERE EXPIRY_DT='{EXPIRY_DT}' """
+op_data_sql_query = op_data_base_sql.format(EXPIRY_DT="30-Jun-2022")
+cursor.execute(op_data_sql_query)
+result_count = cursor.fetchall()
+
+df = pd.read_sql(op_data_sql_query, conn)
+#st.write(df)
+df.to_dict('list')
+
+
+ce_bar_chart = (
+        alt.Chart(df, title="Evolution of stock prices")
+        .mark_bar()
+        .encode(
+            x="TIMESTAMP:T",
+            y="OI_ITM_PCT:Q"
+        )
+    )
+
+
+pe_bar_chart = (
+        alt.Chart(df, title="Evolution of stock prices")
+        .mark_bar()
+        .encode(
+            x="TIMESTAMP:T",
+            y="OI_ITM_PCT:Q"
+        )
+    )
+
+st.altair_chart((ce_bar_chart + pe_bar_chart).interactive(), use_container_width=True)
+
+oi_line_chart = (
+        alt.Chart(df, title="Evolution of stock prices")
+        .mark_bar()
+        .encode(
+            x="TIMESTAMP:T",
+            y="OI_ITM_PCT",
+            color="OPTION_TYP",
+            # strokeDash="symbol",
+        )
+    )
+
+
+st.altair_chart((oi_line_chart).interactive(), use_container_width=True)
+
+oichg_line_chart = (
+        alt.Chart(df, title="Evolution of stock prices")
+        .mark_bar()
+        .encode(
+            x="TIMESTAMP:T",
+            y="OICHG_ITM_PCT",
+            color="OPTION_TYP",
+            # strokeDash="symbol",
+        )
+    )
+
+
+st.altair_chart((oichg_line_chart).interactive(), use_container_width=True)
+
 source = data.stocks()
 all_symbols = source.symbol.unique()
 symbols = st.multiselect("Choose stocks to visualize", all_symbols, all_symbols[:3])
@@ -28,6 +91,7 @@ symbols = st.multiselect("Choose stocks to visualize", all_symbols, all_symbols[
 space(1)
 
 source = source[source.symbol.isin(symbols)]
+
 #chart = alt.Chart(source)
 lines = (
         alt.Chart(source, title="Evolution of stock prices")
