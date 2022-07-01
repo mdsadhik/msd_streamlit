@@ -139,7 +139,8 @@ file_name = "fo17JUN2022bhav"
 fo_csv_df = pd.read_csv('C:\\BACKUP\\01_NSE_DATA\\JUN2022\\'+ file_name + ".csv")
 fo_csv_df.insert(0, "FILE_NAME", file_name, True)
 
-
+fo_csv_df = fo_csv_df[['FILE_NAME']]
+print(fo_csv_df.head(10))
 
 cursor.execute("SELECT COUNT(*) FROM bhavcopy_data WHERE FILE_NAME=:file_name", {"file_name": file_name})
 result_count = cursor.fetchone()
