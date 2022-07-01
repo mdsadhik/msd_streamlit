@@ -1,1 +1,305 @@
-ksdfk;alskf;ldsf
+SELECT sub2.SYMBOL as SYMBOL, sub2.TIMESTAMP as TIMESTAMP, sub2.OPTION_TYP as OPTION_TYP, sub2.FUT_SETTLE_PR as FUT_SETTLE_PR, sub2.EXPIRY_DT as EXPIRY_DT, ROUND(sub2.OI_TOTAL, 2) as OI, 
+ROUND(sub2.OI_ITM_TOTAL, 2) as OI_ITM, ROUND(sub2.OICHG_TOTAL, 2) as OICHG, ROUND(sub2.OICHG_ITM_TOTAL, 2) as OICHG_ITM,
+ROUND((sub2.OI_ITM_TOTAL/sub2.OI_TOTAL)*100, 2) as OI_ITM_PCT, ROUND((sub2.OICHG_ITM_TOTAL/sub2.OICHG_TOTAL)*100, 2) as OICHG_ITM_PCT, 
+ROUND(sub2.OI_RND_TOTAL, 2) as OI_RND, ROUND(sub2.OI_RND_ITM_TOTAL, 2) as OI_RND_ITM, ROUND(sub2.OICHG_RND_TOTAL, 2) as OICHG_RND, 
+ROUND(sub2.OICHG_RND_ITM_TOTAL, 2) as OICHG_RND_ITM, ROUND((sub2.OI_RND_ITM_TOTAL/sub2.OI_RND_TOTAL)*100, 2) as OI_RND_ITM_PCT,
+ROUND((sub2.OICHG_RND_ITM_TOTAL/sub2.OICHG_RND_TOTAL)*100, 2) as OICHG_RND_ITM_PCT
+FROM ( SELECT sub.SYMBOL, sub.OPTION_TYP, sub.FUT_SETTLE_PR, sub.EXPIRY_DT, sub.TIMESTAMP, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL, 
+sum(sub.OI_RND_TOTAL) as OI_RND_TOTAL, sum(sub.OI_RND_ITM_TOTAL) as OI_RND_ITM_TOTAL, 
+sum(sub.OICHG_RND_TOTAL) as OICHG_RND_TOTAL, sum(sub.OICHG_RND_ITM_TOTAL) as OICHG_RND_ITM_TOTAL
+FROM ( 
+SELECT bc_opt.SYMBOL, bc_opt.EXPIRY_DT, bc_opt.TIMESTAMP, bc_opt.OPTION_TYP, bc_opt.STRIKE_PR, bc_opt.OPEN_INT, bc_opt.SETTLE_PR, bc_opt.OPEN_INT * bc_opt.SETTLE_PR as OI_TOTAL, 
+bc_fut.SETTLE_PR as FUT_SETTLE_PR,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_ITM_TOTAL, 
+bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR as OICHG_TOTAL,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR THEN bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR ELSE 0 END AS OICHG_ITM_TOTAL,
+CASE WHEN (bc_opt.STRIKE_PR % 500) = 0 THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_RND_TOTAL,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR AND (bc_opt.STRIKE_PR % 500) = 0 THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_RND_ITM_TOTAL,
+CASE WHEN (bc_opt.STRIKE_PR % 500) = 0 THEN bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR ELSE 0 END AS OICHG_RND_TOTAL,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR AND (bc_opt.STRIKE_PR % 500) = 0 THEN bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR ELSE 0 END AS OICHG_RND_ITM_TOTAL
+FROM bhavcopy_data bc_opt 
+INNER JOIN bhavcopy_data bc_fut on bc_fut.SYMBOL in ('BANKNIFTY') and bc_fut.INSTRUMENT = 'FUTIDX' and bc_fut.EXPIRY_DT like '%Mar-2022'
+where bc_opt.SYMBOL in ('BANKNIFTY') and bc_opt.EXPIRY_DT = '03-Mar-2022' and bc_opt.OPTION_TYP in ('CE') 
+ ) sub
+group by sub.SYMBOL, sub.EXPIRY_DT, sub.TIMESTAMP, sub.OPTION_TYP) sub2
+
+----------------------------------------------
+
+select * from bhavcopy_data where SYMBOL in ('BANKNIFTY') and INSTRUMENT = 'FUTIDX' and EXPIRY_DT like '%Mar-2022'
+
+SELECT sub2.SYMBOL, sub2.OPTION_TYP, sub2.EXPIRY_DT, sub2.OI_TOTAL, sub2.OI_ITM_TOTAL, sub2.OICHG_TOTAL, sub2.OICHG_ITM_TOTAL,
+(sub2.OI_ITM_TOTAL/sub2.OI_TOTAL)*100 as OI_ITM_TOTAL_PCT, (sub2.OICHG_ITM_TOTAL/sub2.OICHG_TOTAL)*100 as OICHG_ITM_TOTAL_PCT
+FROM (
+SELECT sub.SYMBOL, sub.OPTION_TYP, sub.EXPIRY_DT, sub.TIMESTAMP, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL
+  FROM (
+        SELECT SYMBOL, EXPIRY_DT, TIMESTAMP, OPTION_TYP, STRIKE_PR, OPEN_INT, SETTLE_PR, OPEN_INT * SETTLE_PR as OI_TOTAL, 
+        CASE WHEN STRIKE_PR < 36261 THEN OPEN_INT * SETTLE_PR ELSE 0 END AS OI_ITM_TOTAL, 
+	CHG_IN_OI * SETTLE_PR as OICHG_TOTAL,
+	CASE WHEN STRIKE_PR < 36261 THEN CHG_IN_OI * SETTLE_PR ELSE 0 END AS OICHG_ITM_TOTAL
+          FROM bhavcopy_data
+         where SYMBOL in ('BANKNIFTY') and EXPIRY_DT = '03-Mar-2022' and OPTION_TYP in ('CE')
+       ) sub
+group by sub.SYMBOL, sub.EXPIRY_DT, sub.TIMESTAMP, sub.OPTION_TYP) sub2
+UNION ALL
+SELECT sub2.SYMBOL, sub2.OPTION_TYP, sub2.EXPIRY_DT, sub2.OI_TOTAL, sub2.OI_ITM_TOTAL, sub2.OICHG_TOTAL, sub2.OICHG_ITM_TOTAL,
+(sub2.OI_ITM_TOTAL/sub2.OI_TOTAL)*100 as OI_ITM_TOTAL_PCT, (sub2.OICHG_ITM_TOTAL/sub2.OICHG_TOTAL)*100 as OICHG_ITM_TOTAL_PCT
+FROM (
+SELECT sub.SYMBOL, sub.OPTION_TYP, sub.EXPIRY_DT, sub.TIMESTAMP, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL
+  FROM (
+        SELECT SYMBOL, EXPIRY_DT, TIMESTAMP, OPTION_TYP, STRIKE_PR, OPEN_INT, SETTLE_PR, OPEN_INT * SETTLE_PR as OI_TOTAL, 
+        CASE WHEN STRIKE_PR > 36261 THEN OPEN_INT * SETTLE_PR ELSE 0 END AS OI_ITM_TOTAL, 
+	CHG_IN_OI * SETTLE_PR as OICHG_TOTAL,
+	CASE WHEN STRIKE_PR > 36261 THEN CHG_IN_OI * SETTLE_PR ELSE 0 END AS OICHG_ITM_TOTAL
+          FROM bhavcopy_data
+         where SYMBOL in ('BANKNIFTY') and EXPIRY_DT = '03-Mar-2022' and OPTION_TYP in ('PE')
+       ) sub
+group by sub.SYMBOL, sub.EXPIRY_DT, sub.TIMESTAMP, sub.OPTION_TYP) sub2;
+
+SELECT sub.SYMBOL, sub.OPTION_TYP, sub.EXPIRY_DT, sub.TIMESTAMP, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL
+  FROM (
+        SELECT SYMBOL, EXPIRY_DT, TIMESTAMP, OPTION_TYP, STRIKE_PR, OPEN_INT, SETTLE_PR, OPEN_INT * SETTLE_PR as OI_TOTAL, 
+        CASE WHEN STRIKE_PR > 36261 THEN OPEN_INT * SETTLE_PR ELSE 0 END AS OI_ITM_TOTAL,
+	CHG_IN_OI * SETTLE_PR as OICHG_TOTAL,
+	CASE WHEN STRIKE_PR > 36261 THEN CHG_IN_OI * SETTLE_PR ELSE 0 END AS OICHG_ITM_TOTAL
+          FROM bhavcopy_data
+         where SYMBOL in ('BANKNIFTY') and EXPIRY_DT = '03-Mar-2022' and OPTION_TYP in ('PE')
+       ) sub
+group by sub.SYMBOL, sub.EXPIRY_DT, sub.TIMESTAMP, sub.OPTION_TYP;
+
+
+
+ WHERE sub.resolution = 'NONE'
+ 
+ 
+select T1.* from (select SYMBOL, OPTION_TYP, STRIKE_PR, OPEN_INT, SETTLE_PR, OPEN_INT * SETTLE_PR as OI_TOTAL,
+CASE
+    WHEN STRIKE_PR < 36261 THEN OPEN_INT * SETTLE_PR
+    ELSE 0
+    END AS OI_ITM_TOTAL
+from bhavcopy_data 
+where SYMBOL in ('BANKNIFTY') and EXPIRY_DT = '03-Mar-2022' and OPTION_TYP in ('CE') as T1);
+
+
+) ;
+group by SYMBOL, OPTION_TYP;
+
+
+
+
+select SYMBOL, OPTION_TYP, SUM(OPEN_INT * SETTLE_PR) as OI_TOTAL,
+GROUP_CONCAT(CASE WHEN STRIKE_PR < 36261 THEN OPEN_INT * SETTLE_PR END) as ExpsGreaterThan5
+from bhavcopy_data 
+where SYMBOL in ('BANKNIFTY') and EXPIRY_DT = '03-Mar-2022' and OPTION_TYP in ('CE')
+group by SYMBOL, OPTION_TYP;
+
+UNION ALL
+select SYMBOL, OPTION_TYP, SUM(OPEN_INT * SETTLE_PR) as OI_TOTAL from bhavcopy_data 
+where SYMBOL in ('BANKNIFTY') and EXPIRY_DT = '03-Mar-2022' and OPTION_TYP in ('PE')
+group by SYMBOL, OPTION_TYP;
+
+
+select * from bhavcopy_data where FILE_NAME = 'fo28FEB2022bhav' and OPTION_TYP in ('CE','PE');
+select count(*) from bhavcopy_data where FILE_NAME = 'fo28FEB2022bhav';
+and OPTION_TYP in ('CE','PE');
+68042
+delete from iodata;  
+commit;
+drop table iodata
+
+CREATE TABLE IF NOT EXISTS bhavcopy_data (FILE_NAME text NOT NULL, INSTRUMENT text NOT NULL, SYMBOL text NOT NULL, EXPIRY_DT text NOT NULL, STRIKE_PR integer  NOT NULL, OPTION_TYP text NOT NULL, OPEN integer NOT NULL, HIGH integer NOT NULL, LOW integer NOT NULL, CLOSE integer NOT NULL, SETTLE_PR integer NOT NULL, CONTRACTS integer NOT NULL, VAL_INLAKH integer NOT NULL, OPEN_INT integer NOT NULL, CHG_IN_OI integer NOT NULL,	TIMESTAMP text NOT NULL, OI_TOTAL integer, OI_ITM_TOTAL integer, OI_ITM_PCT integer, OICHG_TOTAL integer, OICHG_ITM_TOTAL integer, OICHG_ITM_PCT integer);
+
+
+SELECT sub2.SYMBOL as SYMBOL, sub2.TIMESTAMP as TIMESTAMP, sub2.OPTION_TYP as OPTION_TYP, sub2.EXPIRY_DT as EXPIRY_DT, ROUND(sub2.OI_TOTAL, 2) as OI, 
+ROUND(sub2.OI_ITM_TOTAL, 2) as OI_ITM, ROUND(sub2.OICHG_TOTAL, 2) as OICHG, ROUND(sub2.OICHG_ITM_TOTAL, 2) as OICHG_ITM,
+ROUND((sub2.OI_ITM_TOTAL/sub2.OI_TOTAL)*100, 2) as OI_ITM_PCT, ROUND((sub2.OICHG_ITM_TOTAL/sub2.OICHG_TOTAL)*100, 2) as OICHG_ITM_PCT, 
+ROUND(sub2.OI_RND_TOTAL, 2) as OI_RND, ROUND(sub2.OI_RND_ITM_TOTAL, 2) as OI_RND_ITM, ROUND(sub2.OICHG_RND_TOTAL, 2) as OICHG_RND, 
+ROUND(sub2.OICHG_RND_ITM_TOTAL, 2) as OICHG_RND_ITM, ROUND((sub2.OI_RND_ITM_TOTAL/sub2.OI_RND_TOTAL)*100, 2) as OI_RND_ITM_PCT,
+ROUND((sub2.OICHG_RND_ITM_TOTAL/sub2.OICHG_RND_TOTAL)*100, 2) as OICHG_RND_ITM_PCT
+
+CREATE TABLE IF NOT EXISTS optiondata (SYMBOL text NOT NULL, TIMESTAMP text NOT NULL, OPTION_TYP text NOT NULL, EXPIRY_DT text NOT NULL, OI integer, OI_ITM integer, OICHG integer, OICHG_ITM integer, OI_ITM_PCT integer, OICHG_ITM_PCT integer , OI_RND integer , OI_RND_ITM integer , OICHG_RND integer,	 OICHG_RND_ITM integer, OI_RND_ITM_PCT integer, OICHG_RND_ITM_PCT integer);
+
+
+
+
+
+
+
+
+
+
+
+import sqlite3
+import pandas as pd
+conn = sqlite3.connect("C:\\BACKUP\\01_NSE_DATA\\bhavcopy.db") # or use :memory: to put it in RAM
+cursor = conn.cursor()
+# create a table
+
+file_name = "fo17JUN2022bhav"
+
+fo_csv_df = pd.read_csv('C:\\BACKUP\\01_NSE_DATA\\JUN2022\\'+ file_name + ".csv")
+fo_csv_df.insert(0, "FILE_NAME", file_name, True)
+
+
+
+cursor.execute("SELECT COUNT(*) FROM bhavcopy_data WHERE FILE_NAME=:file_name", {"file_name": file_name})
+result_count = cursor.fetchone()
+print("Before delete: " + file_name)
+print(result_count[0])
+
+if result_count[0] > 0:
+    delete_count = cursor.execute("DELETE FROM bhavcopy_data WHERE FILE_NAME=:file_name", {"file_name": file_name})   
+    
+    cursor.execute("SELECT COUNT(*) FROM bhavcopy_data WHERE FILE_NAME=:file_name", {"file_name": file_name})
+    result_count1 = cursor.fetchone()
+    print("After delete: " + file_name)
+    print(result_count1[0])
+
+#fo_csv_df.loc[fo_csv_df['SYMBOL'] == "BANKNIFTY"])
+fo_csv_df_sel = fo_csv_df.loc[fo_csv_df['SYMBOL'].isin(['BANKNIFTY','NIFTY'])]
+
+fo_csv_df_sel.to_sql('bhavcopy_data', conn, if_exists='append', index=False)
+
+cursor.execute("SELECT COUNT(*) FROM bhavcopy_data WHERE FILE_NAME=:file_name", {"file_name": file_name})
+result_count2 = cursor.fetchone()
+print("After insert: ")
+print( result_count2[0] )
+
+cursor.execute("SELECT COUNT(*) FROM bhavcopy_data")
+result_count3 = cursor.fetchone()
+print("After insert Total: ")
+print( result_count3[0])
+
+# Save (commit) the changes
+conn.commit()
+# We can also close the connection if we are done with it.
+# Just be sure any changes have been committed or they will be lost.
+conn.close()
+print("-----------------------data inserted successfully ------------------------ " ) 
+    
+#
+
+# print "\nResults from a LIKE query:\n"
+
+
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
+conn = sqlite3.connect("C:\\BACKUP\\01_NSE_DATA\\bhavcopy.db") # or use :memory: to put it in RAM
+cursor = conn.cursor()
+
+base_sql_query = """
+SELECT sub2.SYMBOL as SYMBOL, sub2.TIMESTAMP as TIMESTAMP, sub2.OPTION_TYP as OPTION_TYP, sub2.EXPIRY_DT as EXPIRY_DT, sub2.FUT_SETTLE_PR as FUT_SETTLE_PR, ROUND(sub2.OI_TOTAL, 2) as OI, 
+ROUND(sub2.OI_ITM_TOTAL, 2) as OI_ITM, ROUND(sub2.OICHG_TOTAL, 2) as OICHG, ROUND(sub2.OICHG_ITM_TOTAL, 2) as OICHG_ITM,
+ROUND((sub2.OI_ITM_TOTAL/sub2.OI_TOTAL)*100, 2) as OI_ITM_PCT, ROUND((sub2.OICHG_ITM_TOTAL/sub2.OICHG_TOTAL)*100, 2) as OICHG_ITM_PCT, 
+ROUND(sub2.OI_RND_TOTAL, 2) as OI_RND, ROUND(sub2.OI_RND_ITM_TOTAL, 2) as OI_RND_ITM, ROUND(sub2.OICHG_RND_TOTAL, 2) as OICHG_RND, 
+ROUND(sub2.OICHG_RND_ITM_TOTAL, 2) as OICHG_RND_ITM, ROUND((sub2.OI_RND_ITM_TOTAL/sub2.OI_RND_TOTAL)*100, 2) as OI_RND_ITM_PCT,
+ROUND((sub2.OICHG_RND_ITM_TOTAL/sub2.OICHG_RND_TOTAL)*100, 2) as OICHG_RND_ITM_PCT
+FROM ( SELECT sub.SYMBOL, sub.OPTION_TYP, sub.EXPIRY_DT, sub.FUT_SETTLE_PR, sub.TIMESTAMP, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL, 
+sum(sub.OI_RND_TOTAL) as OI_RND_TOTAL, sum(sub.OI_RND_ITM_TOTAL) as OI_RND_ITM_TOTAL, 
+sum(sub.OICHG_RND_TOTAL) as OICHG_RND_TOTAL, sum(sub.OICHG_RND_ITM_TOTAL) as OICHG_RND_ITM_TOTAL
+FROM ( SELECT bc_opt.SYMBOL, bc_opt.EXPIRY_DT, bc_opt.TIMESTAMP, bc_opt.OPTION_TYP, bc_opt.STRIKE_PR, bc_opt.OPEN_INT, bc_opt.SETTLE_PR, bc_opt.OPEN_INT * bc_opt.SETTLE_PR as OI_TOTAL, 
+bc_fut.SETTLE_PR as FUT_SETTLE_PR,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_ITM_TOTAL, 
+bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR as OICHG_TOTAL,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR THEN bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR ELSE 0 END AS OICHG_ITM_TOTAL,
+CASE WHEN (bc_opt.STRIKE_PR % {RND_PR}) = 0 THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_RND_TOTAL,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR AND (bc_opt.STRIKE_PR % {RND_PR}) = 0 THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_RND_ITM_TOTAL,
+CASE WHEN (bc_opt.STRIKE_PR % {RND_PR}) = 0 THEN bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR ELSE 0 END AS OICHG_RND_TOTAL,
+CASE WHEN bc_opt.STRIKE_PR < bc_fut.SETTLE_PR AND (bc_opt.STRIKE_PR % {RND_PR}) = 0 THEN bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR ELSE 0 END AS OICHG_RND_ITM_TOTAL
+FROM bhavcopy_data bc_opt 
+INNER JOIN bhavcopy_data bc_fut on bc_fut.SYMBOL in ('BANKNIFTY') and bc_fut.INSTRUMENT = 'FUTIDX' and bc_fut.EXPIRY_DT like '{FUT_SETTLE_PR}' 
+where bc_opt.SYMBOL in ('{SYMBOL}') and bc_opt.EXPIRY_DT = '{EXPIRY_DT}' and bc_opt.OPTION_TYP in ('{OPTION_TYP}') and bc_opt.TIMESTAMP like '{FUT_SETTLE_PR}' ) sub
+group by sub.SYMBOL, sub.EXPIRY_DT, sub.TIMESTAMP, sub.OPTION_TYP) sub2
+"""
+ce_sql_query = base_sql_query.format(RND_PR='500', FUT_SETTLE_PR='%Mar-2022', SYMBOL = 'BANKNIFTY', EXPIRY_DT="03-Mar-2022", OPTION_TYP='CE')
+pe_sql_query = base_sql_query.format(RND_PR='500', FUT_SETTLE_PR='%Mar-2022', SYMBOL = 'BANKNIFTY', EXPIRY_DT="03-Mar-2022", OPTION_TYP='PE')
+#print(pe_sql_query)
+
+ce_dataframe = pd.read_sql(ce_sql_query, conn)
+pe_dataframe = pd.read_sql(pe_sql_query, conn)
+#print(ce_dataframe['OI_ITM_PCT'].tolist())
+#print(pe_dataframe['OI_ITM_PCT'].tolist())
+#print(ce_dataframe['TIMESTAMP'].tolist())
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS option_data (SYMBOL text NOT NULL, TIMESTAMP text NOT NULL, OPTION_TYP text NOT NULL, EXPIRY_DT text NOT NULL, FUT_SETTLE_PR integer, OI integer, OI_ITM integer, OICHG integer, OICHG_ITM integer, OI_ITM_PCT integer, OICHG_ITM_PCT integer , OI_RND integer , OI_RND_ITM integer , OICHG_RND integer,	 OICHG_RND_ITM integer, OI_RND_ITM_PCT integer, OICHG_RND_ITM_PCT integer)""")
+
+op_data_base_sql = """SELECT COUNT(*) FROM option_data WHERE EXPIRY_DT='{EXPIRY_DT}' """
+op_data_sql_query = op_data_base_sql.format(EXPIRY_DT="03-Mar-2022")
+cursor.execute(op_data_sql_query)
+result_count = cursor.fetchone()
+print("Before delete: ")
+print(result_count[0])
+
+if result_count[0] > 0:
+	op_data_base_sql = """DELETE FROM option_data WHERE EXPIRY_DT='{EXPIRY_DT}' """
+	op_data_sql_query = op_data_base_sql.format(EXPIRY_DT="03-Mar-2022")
+	delete_count = cursor.execute(op_data_sql_query)   
+    
+	op_data_base_sql = """SELECT COUNT(*) FROM option_data WHERE EXPIRY_DT='{EXPIRY_DT}' """
+	op_data_sql_query = op_data_base_sql.format(EXPIRY_DT="03-Mar-2022")
+	cursor.execute(op_data_sql_query)
+	result_count1 = cursor.fetchone()
+	print("After delete: ")
+	print(result_count1[0])
+	
+ce_dataframe.to_sql('option_data', conn, if_exists='append', index=False)
+pe_dataframe.to_sql('option_data', conn, if_exists='append', index=False)
+
+ce_dataframe['TIMESTAMP'] = pd.to_datetime(ce_dataframe['TIMESTAMP'], format='%d-%b-%Y')
+
+date = ce_dataframe['TIMESTAMP'].tolist()
+ce_pct = ce_dataframe['OI_ITM_PCT'].tolist()
+pe_pct = pe_dataframe['OI_ITM_PCT'].tolist()
+  
+df = pd.DataFrame({
+    'Date': ce_dataframe['TIMESTAMP'].tolist(),
+    'CE': ce_dataframe['OI_ITM_PCT'].tolist(),
+    'PE': pe_dataframe['OI_ITM_PCT'].tolist()    
+})
+
+print(df)
+# plotting graph
+df.plot(x="Date", y=["CE", "PE"], kind="bar")    
+    
+
+plt.show()
+
+
+#df = pd.DataFrame({'ce': ce_dataframe['OI_ITM_PCT'].tolist(), 
+ #                  'pe': pe_dataframe['OI_ITM_PCT'].tolist()}, 
+#index=ce_dataframe['TIMESTAMP'].tolist())
+#lines = df.plot.line()
+#print(ce_dataframe)
+#print(pe_dataframe)	
+		
+
+# Save (commit) the changes
+conn.commit()
+# We can also close the connection if we are done with it.
+# Just be sure any changes have been committed or they will be lost.
+conn.close()
+
+
+
+
+
+import requests
+headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; '
+            'x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36'}
+
+
+main_url = "https://www.nseindia.com/"
+response = requests.get(main_url, headers=headers)
+print(response.status_code)
+cookies = response.cookies
+
+url = "https://www.nseindia.com/api/option-chain-indices?symbol=BANKNIFTY"
+bank_nifty_oi_data = requests.get(url, headers=headers, cookies=cookies)
+print(bank_nifty_oi_data.status_code)
+print("BN OI data", bank_nifty_oi_data.text)
+
+url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+nifty_oi_data = requests.get(url, headers=headers, cookies=cookies)
+print(nifty_oi_data.status_code)
+print("Nifty OI data", nifty_oi_data.text)
