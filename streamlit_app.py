@@ -2,6 +2,7 @@ from datetime import datetime
 
 import streamlit as st
 from vega_datasets import data
+import altair as alt
 
 from utils import chart, db
 
@@ -19,7 +20,7 @@ st.set_page_config(layout="centered", page_icon="💬", page_title="Commenting a
 
 # Data visualisation part
 
-st.title("💬 Commenting app........")
+st.title("💬 Commenting app........>>>")
 
 source = data.stocks()
 all_symbols = source.symbol.unique()
@@ -32,6 +33,7 @@ chart = chart.get_chart(source)
 st.altair_chart(chart, use_container_width=True)
 
 space(2)
+
 
 # Comments part
 
@@ -68,3 +70,7 @@ with st.expander("💬 Open comments"):
         if "just_posted" not in st.session_state:
             st.session_state["just_posted"] = True
         st.experimental_rerun()
+        
+source = data.stocks()
+chart = get_chart(source)
+st.altair_chart((chart).interactive(), use_container_width=True)
