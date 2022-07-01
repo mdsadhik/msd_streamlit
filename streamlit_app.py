@@ -1,9 +1,8 @@
-from datetime import datetime
-
+import altair as alt
+import pandas as pd
 import streamlit as st
 from vega_datasets import data
-import altair as alt
-
+from datetime import datetime
 from utils import chart, db
 
 COMMENT_TEMPLATE_MD = """{} - {}
