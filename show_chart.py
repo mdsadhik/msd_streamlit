@@ -1,200 +1,92 @@
-import altair as alt
-import pandas as pd
-import streamlit as st
-from vega_datasets import data
-from datetime import datetime
+import matplotlib.pyplot as plt
+import datetime
+import numpy as np
 import sqlite3
 
-conn = sqlite3.connect("D:\\NSEDATA\\database\\bhavcopy.db") # or use :memory: to put it in RAM
+conn = sqlite3.connect("C:\\BACKUP\\01_NSE_DATA\\bhavcopy.db") # or use :memory: to put it in RAM
 cursor = conn.cursor()
 
+SYMBOL_VAL='BANKNIFTY'
+EXPIRY_DT_VAL = '30-Jun-2022'
 
-COMMENT_TEMPLATE_MD = """{} - {}
-> {}"""
+ce_data_base_sql = """SELECT SYMBOL, TIMESTAMP, OPTION_TYP, OI_ITM_PCT, OICHG_ITM_PCT, EXPIRY_DT, FUT_SETTLE_PR FROM option_data WHERE SYMBOL = '{SYMBOL}' AND OPTION_TYP = 'CE' AND EXPIRY_DT='{EXPIRY_DT}' """
+ce_data_base_sql = ce_data_base_sql.format(SYMBOL = SYMBOL_VAL, EXPIRY_DT=EXPIRY_DT_VAL)
+pe_data_base_sql = """SELECT SYMBOL, TIMESTAMP, OPTION_TYP, OI_ITM_PCT, OICHG_ITM_PCT, EXPIRY_DT FROM option_data WHERE SYMBOL = '{SYMBOL}' AND OPTION_TYP = 'PE' AND EXPIRY_DT='{EXPIRY_DT}' """
+pe_data_base_sql = pe_data_base_sql.format(SYMBOL = SYMBOL_VAL, EXPIRY_DT=EXPIRY_DT_VAL)
 
-
-def space(num_lines=1):
-    """Adds empty lines to the Streamlit app."""
-    for _ in range(num_lines):
-        st.write("")
-
-
-st.set_page_config(layout="centered", page_icon="💬", page_title="Commenting app")
-
-# Data visualisation part
-
-st.title("💬 Commenting app........>>>")
-
-op_data_base_sql = """SELECT SYMBOL, TIMESTAMP, OPTION_TYP, OI_ITM_PCT, OICHG_ITM_PCT, EXPIRY_DT FROM option_data WHERE EXPIRY_DT='{EXPIRY_DT}' """
-op_data_sql_query = op_data_base_sql.format(EXPIRY_DT="30-Jun-2022")
-cursor.execute(op_data_sql_query)
-result_count = cursor.fetchall()
-
-df = pd.read_sql(op_data_sql_query, conn)
-#st.write(df)
-df.to_dict('list')
+#print(ce_data_base_sql)
+#print(pe_data_base_sql)
+ce_chart_data = pd.read_sql(ce_data_base_sql, conn)
+pe_chart_data = pd.read_sql(pe_data_base_sql, conn)
+ce_chart_data['TIMESTAMP_DT'] = ce_chart_data['TIMESTAMP']
+pe_chart_data['TIMESTAMP_DT'] = pe_chart_data['TIMESTAMP']
+ce_chart_data['TIMESTAMP_DT'] = pd.to_datetime(ce_chart_data['TIMESTAMP_DT'], format='%d-%b-%Y', dayfirst = True)
+pe_chart_data['TIMESTAMP_DT'] = pd.to_datetime(pe_chart_data['TIMESTAMP_DT'], format='%d-%b-%Y', dayfirst = True)
 
 
-ce_bar_chart = (
-        alt.Chart(df, title="Evolution of stock prices")
-        .mark_bar()
-        .encode(
-            x="TIMESTAMP:T",
-            y="OI_ITM_PCT:Q"
-        )
-    )
+ce_chart_data = ce_chart_data.sort_values(by=['TIMESTAMP_DT'])
+pe_chart_data = pe_chart_data.sort_values(by=['TIMESTAMP_DT'])
+
+#ce_chart_data = ce_chart_data[ce_chart_data.TIMESTAMP > datetime.datetime.now() - pd.to_timedelta("60day")]
+#pe_chart_data = pe_chart_data[pe_chart_data.TIMESTAMP > datetime.datetime.now() - pd.to_timedelta("60day")]
+
+ce_chart_data = ce_chart_data.tail(22)
+pe_chart_data = pe_chart_data.tail(22)
+
+#print(ce_chart_data)
+#print(pe_chart_data)
 
 
-pe_bar_chart = (
-        alt.Chart(df, title="Evolution of stock prices")
-        .mark_bar()
-        .encode(
-            x="TIMESTAMP:T",
-            y="OI_ITM_PCT:Q"
-        )
-    )
+ce_oi_itm_date = np.array(ce_chart_data['TIMESTAMP'])
+ce_oi_itm_pct = np.array(ce_chart_data['OI_ITM_PCT'])
+pe_oi_itm_date = np.array(pe_chart_data['TIMESTAMP'])
+pe_oi_itm_pct = np.array(pe_chart_data['OI_ITM_PCT'])
 
-st.altair_chart((ce_bar_chart + pe_bar_chart).interactive(), use_container_width=True)
+cechg_oi_itm_date = np.array(ce_chart_data['TIMESTAMP'])
+cechg_oi_itm_pct = np.array(ce_chart_data['OICHG_ITM_PCT'])
+pechg_oi_itm_date = np.array(pe_chart_data['TIMESTAMP'])
+pechg_oi_itm_pct = np.array(pe_chart_data['OICHG_ITM_PCT'])
 
-oi_line_chart = (
-        alt.Chart(df, title="Evolution of stock prices")
-        .mark_bar()
-        .encode(
-            x="TIMESTAMP:T",
-            y="OI_ITM_PCT",
-            color="OPTION_TYP",
-            # strokeDash="symbol",
-        )
-    )
+close_date = np.array(ce_chart_data['TIMESTAMP'])
+close_price = np.array(ce_chart_data['FUT_SETTLE_PR'])
 
 
-st.altair_chart((oi_line_chart).interactive(), use_container_width=True)
+n=len(ce_oi_itm_date)
+r = np.arange(n)
+width = 0.4
 
-oichg_line_chart = (
-        alt.Chart(df, title="Evolution of stock prices")
-        .mark_bar()
-        .encode(
-            x="TIMESTAMP:T",
-            y="OICHG_ITM_PCT",
-            color="OPTION_TYP",
-            # strokeDash="symbol",
-        )
-    )
+fig, (ax1, ax2) = plt.subplots(2)
+fig.suptitle("Percentage of ITM (value term)"  + SYMBOL_VAL + " " + EXPIRY_DT_VAL ,fontsize=50)
+plt.rcParams["figure.figsize"] = (50,20)  
+plt.grid(linestyle='--')
+plt.xlabel("Date",fontsize=30)
+plt.ylabel("Percentage of ITM (value term) ",fontsize=30)
+plt.xticks(rotation=90,fontsize=30)
+plt.xticks(r + width/2, ce_oi_itm_date)
+#plt.yticks(np.arange(0, max(pe_oi_itm_pct), 10),fontsize=30)
 
-
-st.altair_chart((oichg_line_chart).interactive(), use_container_width=True)
-
-source = data.stocks()
-all_symbols = source.symbol.unique()
-symbols = st.multiselect("Choose stocks to visualize", all_symbols, all_symbols[:3])
-
-space(1)
-
-source = source[source.symbol.isin(symbols)]
-
-#chart = alt.Chart(source)
-lines = (
-        alt.Chart(source, title="Evolution of stock prices")
-        .mark_line()
-        .encode(
-            x="date",
-            y="price",
-            color="symbol",
-            # strokeDash="symbol",
-        )
-    )
-
-st.altair_chart(lines, use_container_width=True)
-
-@st.experimental_memo
-def get_data():
-    source = data.stocks()
-    source = source[source.date.gt("2004-01-01")]
-    return source
+#ax1.plot(ce_oi_itm_date, close_price)
+#ax1.set_ylabel('Daily close price')
 
 
-@st.experimental_memo(ttl=60 * 60 * 24)
-def get_chart(data):
-    hover = alt.selection_single(
-        fields=["date"],
-        nearest=True,
-        on="mouseover",
-        empty="none",
-    )
+ax1.bar(r + 0.2 , ce_oi_itm_pct, color = 'b', width = width, edgecolor = 'black', label='CE_OI_ITM_PCT')
+ax1.bar(r + 0.2 * 2,  pe_oi_itm_pct, color = 'r', width = width, edgecolor = 'black', label='PE_OI_ITM_PCT')
+ax1.grid(linestyle='--')
+ax1.set_xlabel("Date",fontsize=30)
+ax1.set_ylabel("Percentage of ITM (value term) ",fontsize=30)
+ax1.set_yticks(np.arange(0, max(pe_oi_itm_pct), 10))
 
-    lines = (
-        alt.Chart(data, title="Evolution of stock prices")
-        .mark_line()
-        .encode(
-            x="date",
-            y="price",
-            color="symbol",
-            # strokeDash="symbol",
-        )
-    )
+ax2.bar(r + 0.2 , cechg_oi_itm_pct, color = 'b', width = width, edgecolor = 'black', label='CECHG_OI_ITM_PCT')
+ax2.bar(r + 0.2 * 2,  pechg_oi_itm_pct, color = 'r', width = width, edgecolor = 'black', label='PECHG_OI_ITM_PCT')
+ax2.grid(linestyle='--')
+ax2.set_xlabel("Date",fontsize=30)
+ax2.set_ylabel("Percentage of ITM (value term) ",fontsize=30)
+ax2.set_yticks(np.arange(0, max(pe_oi_itm_pct), 10))
 
-    # Draw points on the line, and highlight based on selection
-    points = lines.transform_filter(hover).mark_circle(size=65)
+plt.show()
 
-    # Draw a rule at the location of the selection
-    tooltips = (
-        alt.Chart(data)
-        .mark_rule()
-        .encode(
-            x="yearmonthdate(date)",
-            y="price",
-            opacity=alt.condition(hover, alt.value(0.3), alt.value(0)),
-            tooltip=[
-                alt.Tooltip("date", title="Date"),
-                alt.Tooltip("price", title="Price (USD)"),
-            ],
-        )
-        .add_selection(hover)
-    )
-
-    return (lines + points + tooltips).interactive()
-
-space(2)
-
-st.write("Give more context to your time series using annotations!")
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    ticker = st.text_input("Choose a ticker (⬇💬👇ℹ️ ...)", value="⬇")
-with col2:
-    ticker_dx = st.slider(
-        "Horizontal offset", min_value=-30, max_value=30, step=1, value=0
-    )
-with col3:
-    ticker_dy = st.slider(
-        "Vertical offset", min_value=-30, max_value=30, step=1, value=-10
-    )
-# Original time series chart. Omitted `get_chart` for clarity
-source = get_data()
-chart = get_chart(source)
-
-# Input annotations
-ANNOTATIONS = [
-    ("Mar 01, 2008", "Pretty good day for GOOG"),
-    ("Dec 01, 2007", "Something's going wrong for GOOG & AAPL"),
-    ("Nov 01, 2008", "Market starts again thanks to..."),
-    ("Dec 01, 2009", "Small crash for GOOG after..."),
-]
-
-# Create a chart with annotations
-annotations_df = pd.DataFrame(ANNOTATIONS, columns=["date", "event"])
-annotations_df.date = pd.to_datetime(annotations_df.date)
-annotations_df["y"] = 0
-annotation_layer = (
-    alt.Chart(annotations_df)
-    .mark_text(size=15, text=ticker, dx=ticker_dx, dy=ticker_dy, align="center")
-    .encode(
-        x="date:T",
-        y=alt.Y("y:Q"),
-        tooltip=["event"],
-    )
-    .interactive()
-)
-
-# Display both charts together
-st.altair_chart((chart + annotation_layer).interactive(), use_container_width=True)
+# Save (commit) the changes
+conn.commit()
+# We can also close the connection if we are done with it.
+# Just be sure any changes have been committed or they will be lost.
+conn.close()
