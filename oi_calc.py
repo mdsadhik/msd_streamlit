@@ -14,16 +14,16 @@ for row in result_set:
    
 	base_sql_query = """
 	SELECT sub2.SYMBOL as SYMBOL, sub2.TIMESTAMP as TIMESTAMP, sub2.OPTION_TYP as OPTION_TYP, sub2.EXPIRY_DT as EXPIRY_DT, sub2.SPOT_PR as FUT_SETTLE_PR, ROUND(sub2.OI_TOTAL, 2) as OI, 
-	ROUND(sub2.OI_ITM_TOTAL, 2) as OI_ITM, ROUND(sub2.OICHG_TOTAL, 2) as OICHG, ROUND(sub2.OICHG_ITM_TOTAL, 2) as OICHG_ITM,
+	ROUND(sub2.OPEN_INT, 2) as OPEN_INT, ROUND(sub2.OI_ITM_TOTAL, 2) as OI_ITM, ROUND(sub2.OICHG_TOTAL, 2) as OICHG, ROUND(sub2.OICHG_ITM_TOTAL, 2) as OICHG_ITM,
 	ROUND((sub2.OI_ITM_TOTAL/sub2.OI_TOTAL)*100, 2) as OI_ITM_PCT, ROUND((sub2.OICHG_ITM_TOTAL/sub2.OICHG_TOTAL)*100, 2) as OICHG_ITM_PCT, 
 	ROUND(sub2.OI_RND_TOTAL, 2) as OI_RND, ROUND(sub2.OI_RND_ITM_TOTAL, 2) as OI_RND_ITM, ROUND(sub2.OICHG_RND_TOTAL, 2) as OICHG_RND, 
 	ROUND(sub2.OICHG_RND_ITM_TOTAL, 2) as OICHG_RND_ITM, ROUND((sub2.OI_RND_ITM_TOTAL/sub2.OI_RND_TOTAL)*100, 2) as OI_RND_ITM_PCT,
 	ROUND((sub2.OICHG_RND_ITM_TOTAL/sub2.OICHG_RND_TOTAL)*100, 2) as OICHG_RND_ITM_PCT
-	FROM ( SELECT sub.SYMBOL, sub.OPTION_TYP, sub.EXPIRY_DT, sub.SPOT_PR, sub.TIMESTAMP, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL, 
+	FROM ( SELECT sub.SYMBOL, sub.OPTION_TYP, sub.EXPIRY_DT, sub.SPOT_PR, sub.TIMESTAMP, sum(sub.OPEN_INT) as OPEN_INT, sum(sub.OI_TOTAL) as OI_TOTAL, sum(sub.OI_ITM_TOTAL) as OI_ITM_TOTAL, sum(sub.OICHG_TOTAL) as OICHG_TOTAL, sum(sub.OICHG_ITM_TOTAL) as OICHG_ITM_TOTAL, 
 	sum(sub.OI_RND_TOTAL) as OI_RND_TOTAL, sum(sub.OI_RND_ITM_TOTAL) as OI_RND_ITM_TOTAL, 
 	sum(sub.OICHG_RND_TOTAL) as OICHG_RND_TOTAL, sum(sub.OICHG_RND_ITM_TOTAL) as OICHG_RND_ITM_TOTAL
 	FROM ( SELECT bc_opt.SYMBOL, bc_opt.EXPIRY_DT, bc_opt.TIMESTAMP, bc_opt.OPTION_TYP, bc_opt.STRIKE_PR, bc_opt.OPEN_INT, bc_opt.SETTLE_PR, 
-	st_data.CLOSE as SPOT_PR,
+	st_data.CLOSE as SPOT_PR, bc_opt.OPEN_INT, 
 	bc_opt.OPEN_INT * bc_opt.SETTLE_PR as OI_TOTAL, 
 	CASE WHEN bc_opt.STRIKE_PR {OPT} st_data.CLOSE THEN bc_opt.OPEN_INT * bc_opt.SETTLE_PR ELSE 0 END AS OI_ITM_TOTAL, 
 	bc_opt.CHG_IN_OI * bc_opt.SETTLE_PR as OICHG_TOTAL,
@@ -47,7 +47,7 @@ for row in result_set:
 	ce_dataframe = pd.read_sql(ce_sql_query, conn)
 	pe_dataframe = pd.read_sql(pe_sql_query, conn)
 	
-	cursor.execute("""CREATE TABLE IF NOT EXISTS option_data (SYMBOL text NOT NULL, TIMESTAMP text NOT NULL, OPTION_TYP text NOT NULL, EXPIRY_DT text NOT NULL, FUT_SETTLE_PR integer, OI integer, OI_ITM integer, OICHG integer, OICHG_ITM integer, OI_ITM_PCT integer, OICHG_ITM_PCT integer , OI_RND integer , OI_RND_ITM integer , OICHG_RND integer,	 OICHG_RND_ITM integer, OI_RND_ITM_PCT integer, OICHG_RND_ITM_PCT integer)""")
+	cursor.execute("""CREATE TABLE IF NOT EXISTS option_data (SYMBOL text NOT NULL, TIMESTAMP text NOT NULL, OPTION_TYP text NOT NULL, EXPIRY_DT text NOT NULL, FUT_SETTLE_PR integer, OPEN_INT integer, OI integer, OI_ITM integer, OICHG integer, OICHG_ITM integer, OI_ITM_PCT integer, OICHG_ITM_PCT integer , OI_RND integer , OI_RND_ITM integer , OICHG_RND integer, OICHG_RND_ITM integer, OI_RND_ITM_PCT integer, OICHG_RND_ITM_PCT integer, PCR real, PCR_VAL real)""")
 
 	op_data_base_sql = """SELECT COUNT(*) FROM option_data WHERE SYMBOL = '{SYMBOL}' AND EXPIRY_DT='{EXPIRY_DT}' """
 	op_data_sql_query = op_data_base_sql.format(SYMBOL = SYMBOL_VAL, EXPIRY_DT=EXPIRY_DT_VAL)
@@ -80,9 +80,9 @@ for row in result_set:
 		'PE': pe_dataframe['OI_ITM_PCT'].tolist()    
 	})
 	print("Option data calculated for: " + SYMBOL_VAL + " >> " + EXPIRY_DT_VAL)
-	print(df)
+	#print(df)
 
-
+print("Option data calculated successfully completed")
 # Save (commit) the changes
 conn.commit()
 # We can also close the connection if we are done with it.
