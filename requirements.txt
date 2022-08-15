@@ -1,6 +1,7 @@
 altair
 vega-datasets
 pandas
+streamlit-aggrid
 google-api-python-client
 google-auth
 google-auth-httplib2
