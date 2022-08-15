@@ -1,70 +1,56 @@
-from datetime import datetime
-
+import pandas as pd
+import requests
 import streamlit as st
-from vega_datasets import data
-
-from utils import chart, db
-
-COMMENT_TEMPLATE_MD = """{} - {}
-> {}"""
-
-
-def space(num_lines=1):
-    """Adds empty lines to the Streamlit app."""
-    for _ in range(num_lines):
-        st.write("")
+import urllib.request, json 
 
 
 st.set_page_config(layout="centered", page_icon="💬", page_title="Commenting app")
 
-# Data visualisation part
 
-st.title("💬 Commenting app........????")
+URL = "https://trendlyne.com/futures-options/api-filter/futures/25-aug-2022-near/contract_gainers/"
 
-source = data.stocks()
-all_symbols = source.symbol.unique()
-symbols = st.multiselect("Choose stocks to visualize", all_symbols, all_symbols[:3])
 
-space(1)
+    
+    
 
-source = source[source.symbol.isin(symbols)]
-chart = chart.get_chart(source)
-st.altair_chart(chart, use_container_width=True)
+header = {
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.75 Safari/537.36",
+  "X-Requested-With": "XMLHttpRequest"
+}
 
-space(2)
 
-# Comments part
 
-conn = db.connect()
-comments = db.collect(conn)
+r = requests.get(URL, headers=header)
+data_json = json.loads(r.text)
+tableHeaders = data_json['tableHeaders']
+df_columnList = []
+for index, val in enumerate(tableHeaders, start=1):
+    print(index, val)
+    print(index, val['title'])
+    df_columnList.append(val['title'])
+ 
+#print(df_columnList)
+df = pd.DataFrame(columns=df_columnList)
+tmp_df = pd.DataFrame(columns=df_columnList)
+df.columns = df_columnList
+print(df)
 
-with st.expander("💬 Open comments"):
-
-    # Show comments
-
-    st.write("**Comments:**")
-
-    for index, entry in enumerate(comments.itertuples()):
-        st.markdown(COMMENT_TEMPLATE_MD.format(entry.name, entry.date, entry.comment))
-
-        is_last = index == len(comments) - 1
-        is_new = "just_posted" in st.session_state and is_last
-        if is_new:
-            st.success("☝️ Your comment was successfully posted.")
-
-    space(2)
-
-    # Insert comment
-
-    st.write("**Add your own comment:**")
-    form = st.form("comment")
-    name = form.text_input("Name")
-    comment = form.text_area("Comment")
-    submit = form.form_submit_button("Add comment")
-
-    if submit:
-        date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        db.insert(conn, [[name, comment, date]])
-        if "just_posted" not in st.session_state:
-            st.session_state["just_posted"] = True
-        st.experimental_rerun()
+data_List = []
+tableData = data_json['tableData']
+for index, val in enumerate(tableData, start=1):
+    data_dic = {'SYMBOL': val[0]['name'],
+                 'PRICE': val[1],
+                 'DAY_CHANGE_PCT': val[2],
+                 'VOLUME_CONTRACTS': val[3],
+                 'VOLUME_CONTRACTS_PCT': val[4],
+                 'TTV': val[5],
+                 'OI': val[6],
+                 'OI_PCT': val[7],
+                 'BASIS': val[8],
+                 'COC': val[9],
+                 'SPOT': val[10],
+                 'BUILD_UP': val[11]}
+    data_List.append(data_dic)
+ 
+gainer_df = pd.DataFrame(data_List)            
+st.dataframe(gainer_df)
