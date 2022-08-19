@@ -6,7 +6,7 @@ from st_aggrid.shared import JsCode
 from st_aggrid import GridUpdateMode, DataReturnMode
 from pathlib import Path
 
-csv_file_path = Path(__file__).parents[0] / 'data/ROLLOVER_DATA.csv'
+csv_file_path = Path(__file__).parents[1] / 'data/ROLLOVER_DATA.csv'
 
 rollover_df = pd.read_csv(csv_file_path)  # read a CSV file inside the 'data" folder next to 'app.py'
 # df = pd.read_excel(...)  # will work for Excel files
