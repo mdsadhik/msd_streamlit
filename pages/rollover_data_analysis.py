@@ -4,8 +4,11 @@ from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import JsCode
 from st_aggrid import GridUpdateMode, DataReturnMode
+from pathlib import Path
 
-rollover_df = pd.read_csv("../data/ROLLOVER_DATA.csv")  # read a CSV file inside the 'data" folder next to 'app.py'
+csv_file_path = Path(__file__).parents[0] / 'data/ROLLOVER_DATA.csv'
+
+rollover_df = pd.read_csv(csv_file_path)  # read a CSV file inside the 'data" folder next to 'app.py'
 # df = pd.read_excel(...)  # will work for Excel files
 
 st.set_page_config(layout="wide", page_icon="💬", page_title="Commenting app")
