@@ -13,7 +13,8 @@ print(csv_file_path)
 rollover_df = pd.read_csv(csv_file_path)  
 # df = pd.read_excel(...)  # will work for Excel files
 
-st.set_page_config(layout="wide", page_icon="💬", page_title="Commenting app")
+
+#st.set_page_config(layout="wide", page_icon="💬", page_title="Commenting app")
 
 gb = GridOptionsBuilder.from_dataframe(rollover_df)
 # enables pivoting on all columns, however i'd need to change ag grid to allow export of pivoted/grouped data, however it select/filters groups
