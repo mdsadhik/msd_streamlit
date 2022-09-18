@@ -37,42 +37,40 @@ date_list = np.sort(pd.unique(fno_processed_df["TIMESTAMP_DT"]))
 
 stock_list = np.sort(pd.unique(fno_processed_df["SYMBOL"]))
 #stock_list = np.insert(stock_list, 0, 'Select a stock', axis=0)
-selected_stock = st.sidebar.multiselect("Select a stock:", stock_list)
-print('selected_stock ' , type(selected_stock))
 
-#if selected_stock != 'Select a stock':
-if len(selected_stock) != 0:
-    #fno_processed_df = fno_processed_df[fno_processed_df["SYMBOL"] == selected_stock]
-    fno_processed_df = fno_processed_df[fno_processed_df.SYMBOL.isin(selected_stock)]
 
 #date_list = np.insert(date_list, 0, 'Select a date', axis=0)
-selected_date = st.sidebar.multiselect("Select a date:", date_list)
 
-#if selected_date != 'Select a date':
-if len(selected_date) != 0:
-    fno_processed_df = fno_processed_df[fno_processed_df.TIMESTAMP_DT.isin(selected_date)]
-    #fno_processed_df = fno_processed_df[fno_processed_df["TIMESTAMP_DT"] == selected_date]
+
 
 trend_list = ['Select a trend', 'BULLISH', 'BEARISH']
-selected_trend = st.sidebar.selectbox("Select a trend:", trend_list)
+
+#fno_processed_df = fno_processed_df.sort_values(by=['CONTRACTS'], ascending=False)
+
+col_1, col_2 = st.columns(2)
+col_1.caption("DATE SELECTION:")
+selected_date = col_1.multiselect("Select a date:", date_list)
+col_2.caption("TREND SELECTION:" )
+selected_stock = col_2.multiselect("Select a stock:", stock_list)
+
+col_3, col_4 = st.columns(2)
+selected_trend = col_3.selectbox("Select a trend:", trend_list)
+
+if len(selected_date) != 0:
+    fno_processed_df = fno_processed_df[fno_processed_df.TIMESTAMP_DT.isin(selected_date)]
+
+if len(selected_stock) != 0:
+    fno_processed_df = fno_processed_df[fno_processed_df.SYMBOL.isin(selected_stock)]
+
+
 if selected_trend == 'BULLISH':
     fno_processed_df = fno_processed_df[fno_processed_df.OPT_OI_TREND.isin(['BULLISH_TRADE','STRONG_BULLISH_TRADE']) & fno_processed_df.FUT_OI_TREND.isin(['BULLISH_TRADE','STRONG_BULLISH_TRADE']) ]
 if selected_trend == 'BEARISH':
     fno_processed_df = fno_processed_df[fno_processed_df.OPT_OI_TREND.isin(['BEARISH_TRADE','STRONG_BEARISH_TRADE']) & fno_processed_df.FUT_OI_TREND.isin(['BEARISH_TRADE','STRONG_BEARISH_TRADE']) ]
 
-#fno_processed_df = fno_processed_df.sort_values(by=['CONTRACTS'], ascending=False)
-      
-bullish_col_1, bullish_col_2 = st.columns(2)
-bullish_col_1.caption("DATE SELECTION:" )
-bullish_col_1.caption("")
 
-bullish_col_2.caption("TREND SELECTION:" )
-bullish_col_2.caption("")
+grid_data_df = fno_processed_df[['TIMESTAMP', 'SYMBOL', 'BUILDUP', 'FUT_OI_TREND', 'OPT_OI_TREND', 'CLOSE', 'VWAP',  'CONTRACTS_RANK', 'PRICE_CHG_PCT_RANK','FUT_OI_CHG_LOT_RANK', 'CE_OI_CHG_LOT_RANK', 'PE_OI_CHG_LOT_RANK']]
 
-		
-
-
-grid_data_df = fno_processed_df[['TIMESTAMP', 'SYMBOL', 'LOT_SIZE', 'CONTRACTS','BUILDUP', 'FUT_OI_TREND', 'OPT_OI_TREND', 'OPEN', 'HIGH', 'LOW', 'CLOSE',  'OPEN_INT', 'CHG_IN_OI']]
 
 gb = GridOptionsBuilder.from_dataframe(grid_data_df)
 # enables pivoting on all columns, however i'd need to change ag grid to allow export of pivoted/grouped data, however it select/filters groups
