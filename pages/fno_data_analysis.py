@@ -19,11 +19,12 @@ month_name = today.strftime("%b")
 
 st.set_page_config(layout="wide", page_icon="💬", page_title="Stock analysis app")
 
-#fno_processed_df['TIMESTAMP_DT'] = pd.to_datetime(fno_processed_df['TIMESTAMP_DT'], format='%d-%b-%Y', dayfirst = True)
+
 fno_processed_df = fno_processed_df[~fno_processed_df.FUT_OI_TREND.isin(['NO_TRADE'])]
 fno_processed_df = fno_processed_df[~fno_processed_df.OPT_OI_TREND.isin(['NO_TRADE'])]
+#fno_processed_df['TIMESTAMP_DT'] = pd.to_datetime(fno_processed_df['TIMESTAMP_DT'], format='%d-%m-%y', dayfirst = True)
 fno_processed_df['TIMESTAMP_TMP'] = fno_processed_df['TIMESTAMP']
-fno_processed_df['TIMESTAMP_TMP'] = pd.to_datetime(fno_processed_df['TIMESTAMP_TMP'], format='%d-%b-%Y', dayfirst = True)
+fno_processed_df['TIMESTAMP_TMP'] = pd.to_datetime(fno_processed_df['TIMESTAMP_TMP'], format='%d-%b-%y', dayfirst = True)
 
 
 fno_processed_df = fno_processed_df.sort_values(by=['TIMESTAMP_TMP'], ascending=False)
