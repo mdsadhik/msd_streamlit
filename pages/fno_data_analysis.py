@@ -10,14 +10,19 @@ from st_aggrid.shared import JsCode
 from st_aggrid import GridUpdateMode, DataReturnMode
 from pathlib import Path
 
-csv_file_path = Path(__file__).parents[1] / 'data/fno_processed_data.csv'
+st.set_page_config(layout="wide", page_icon="💬", page_title="Stock analysis app")
 
-fno_processed_df = pd.read_csv(csv_file_path)
+@st.cache(suppress_st_warning=True)
+def getFnoDate():
+    csv_file_path = Path(__file__).parents[1] / 'data/fno_processed_data.csv'
+    fno_data = pd.read_csv(csv_file_path)
+    return fno_data
 
+fno_processed_df = getFnoDate()
 today = date.today()
 month_name = today.strftime("%b")
 
-st.set_page_config(layout="wide", page_icon="💬", page_title="Stock analysis app")
+
 
 
 fno_processed_df = fno_processed_df[~fno_processed_df.FUT_OI_TREND.isin(['NO_TRADE'])]
