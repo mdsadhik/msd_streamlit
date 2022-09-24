@@ -26,6 +26,7 @@ fpi_chart_data['RPORT_DATE_DT'] = fpi_chart_data['RPORT_DATE']
 fpi_chart_data['VALUE_K'] = fpi_chart_data['VALUE'] / 100
 fpi_chart_data['RPORT_DATE_DT'] = pd.to_datetime(fpi_chart_data['RPORT_DATE_DT'], format='%d-%b-%y', dayfirst = True)
 fpi_chart_data = fpi_chart_data[~fpi_chart_data.SECTOR.isin(['Forest Materials','Others','Sovereign'])]
+fpi_chart_data = fpi_chart_data[fpi_chart_data.IS_LATEST.isin(['Yes'])]
 
 sector_names = np.sort(pd.unique(fpi_chart_data["SECTOR"]))
 fpi_chart_by_latest_date = fpi_chart_data[fpi_chart_data["RPORT_DATE"] == fpi_chart_data.tail(1)['RPORT_DATE'].iloc[0]]
