@@ -103,32 +103,3 @@ df = pd.DataFrame(response["selected_rows"])
 st.subheader("Filtered data will appear below 👇 ")
 st.table(df)
 #<START>------------------------------------ Candlestick C=hart-------------------------
-
-"""
-
-import csv    
-import pandas as pd
-# read flash.dat to a list of lists
-
-file_name = 'C:\\Users\\1478048\\NIFTYDATA\\BHAVCOPY\\STOCK\\CM\\MTO_02052022.DAT'
-
-file = open(file_name, 'r') 
-file_contents = file.readlines() 
-i = 0
-data = []
-
-for line in file_contents: 
-    i = i + 1
-    if i == 3:
-        date_val = line.strip()[:-21][12:]        
-    if i > 4 and i < 10:
-        data.append(date_val)
-        data.append(line.strip().split(","))
-        #print(line.strip())
-
-for d in data:
-    print(d)
-    
-file.close() 
-
-"""
