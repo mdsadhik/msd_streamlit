@@ -46,7 +46,7 @@ if len(selected_date) != 0:
 
 if selected_rank == 10 or selected_rank == 20 or selected_rank == 30 or selected_rank == 40 or selected_rank == 50:
     grid_rollover_df = grid_rollover_df.loc[grid_rollover_df['PCT_TO_AVG_RANK'] <= selected_rank]
-    grid_rollover_df = grid_rollover_df.loc[grid_rollover_df['PCT_TO_LAST_MONTH_RANK'] <= selected_rank]
+    #grid_rollover_df = grid_rollover_df.loc[grid_rollover_df['PCT_TO_LAST_MONTH_RANK'] <= selected_rank]
 
 grid_rollover_df = grid_rollover_df.sort_values(by=['PCT_TO_AVG_RANK'], ascending=True)
 
@@ -87,7 +87,7 @@ if not selected_df.empty:
     #print(sel_year_month_list)
     selected_rollover_df = selected_rollover_df[selected_rollover_df.YEAR_MONTH.isin(sel_year_month_list)]
     st.subheader("Filtered data will appear below 👇 for " + selected_df.iloc[0]['SYMBOL'])
-    sel_grid_rollover_df = selected_rollover_df[['SYMBOL', 'YEAR_MONTH', 'TIMESTAMP_DT', 'OPEN_INT', 'OPEN_INT_SUM', 'PCT_TO_AVG','PCT_TO_LAST_MONTH', 'PCT_TO_AVG_RANK', 'PCT_TO_LAST_MONTH_RANK']]
+    sel_grid_rollover_df = selected_rollover_df[['SYMBOL', 'YEAR_MONTH', 'TIMESTAMP_DT', 'OPEN_INT', 'OPEN_INT_SUM', 'PCT_TO_AVG','PCT_TO_LAST_MONTH', 'IS_CUR_MONTH_MAX',  'PCT_TO_AVG_RANK', 'PCT_TO_LAST_MONTH_RANK']]
     sel_grid_rollover_df = sel_grid_rollover_df.sort_values(by=['TIMESTAMP_DT'], ascending=False)
     chart_1, chart_2 = st.columns(2)
     fpi_bar_chart1 = alt.Chart(sel_grid_rollover_df).mark_bar().encode(
