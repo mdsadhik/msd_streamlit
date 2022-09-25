@@ -17,6 +17,7 @@ from st_aggrid.shared import JsCode
 from st_aggrid import GridUpdateMode, DataReturnMode
 from pathlib import Path
 
+st.set_page_config(layout="wide", page_icon="💬", page_title="Stock analysis app")
 
 now = datetime.now()
 date_string = now.strftime("%d-%b-%Y")
