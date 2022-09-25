@@ -16,22 +16,21 @@ from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import JsCode
 from st_aggrid import GridUpdateMode, DataReturnMode
 from pathlib import Path
-
 st.set_page_config(layout="wide", page_icon="💬", page_title="Stock analysis app")
+
 
 now = datetime.now()
 date_string = now.strftime("%d-%b-%Y")
 time_string = now.strftime("%H_%M")
-deta = Deta('d0ej26sp_y1AoMJG37t75Gjy86yQBQ839SKzvgUP8')
-rollover_data_db = deta.Base("rollover_data_db")
 
-db_content = rollover_data_db.fetch(query={"key": "ZEEL_31-DEC-2021"}).items
-#db_content = rollover_data_db.fetch().items
-#df = pd.read_json(db_content)
-df = pd.DataFrame(db_content)
-print(df)
+@st.cache(suppress_st_warning=True)
+def getRolloverData():
+    deta = Deta('d0ej26sp_y1AoMJG37t75Gjy86yQBQ839SKzvgUP8')
+    rollover_data_db = deta.Base("rollover_data_db")
+    all_records = rollover_data_db.fetch().items
+    return all_records
 
-rollover_data = rollover_data_db.fetch().items
+rollover_data = getRolloverData()
 rollover_df = pd.DataFrame(rollover_data)
 rollover_df = rollover_df.sort_values(by=['TIMESTAMP_DT'], ascending=False)
 grid_rollover_df = rollover_df[['SYMBOL', 'YEAR_MONTH', 'OPEN_INT', 'PCT_TO_AVG','PCT_TO_LAST_MONTH','IS_CUR_MONTH_MAX', 'PCT_TO_AVG_RANK', 'PCT_TO_LAST_MONTH_RANK']]
