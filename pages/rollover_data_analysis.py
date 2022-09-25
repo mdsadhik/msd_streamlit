@@ -27,7 +27,7 @@ time_string = now.strftime("%H_%M")
 def getRolloverData():
     deta = Deta('d0ej26sp_y1AoMJG37t75Gjy86yQBQ839SKzvgUP8')
     rollover_data_db = deta.Base("rollover_data_db")
-    all_records = rollover_data_db.fetch().items
+    all_records = rollover_data_db.fetch(limit=3000).items
     return all_records
 
 rollover_data = getRolloverData()
@@ -37,8 +37,9 @@ grid_rollover_df = rollover_df[['SYMBOL', 'YEAR_MONTH', 'OPEN_INT', 'PCT_TO_AVG'
 
 
 year_month_list = np.sort(pd.unique(rollover_df["YEAR_MONTH"]))
+print(year_month_list[3:])
 col_1, col_2 = st.columns(2)
-selected_date = col_1.selectbox("Select a date:", year_month_list)
+selected_date = col_1.selectbox("Select a date:", year_month_list[3:])
 selected_rank = col_2.selectbox("Select a highest rollover number:", [10,20,30,40,50])
 if len(selected_date) != 0:
     grid_rollover_df = grid_rollover_df[grid_rollover_df.YEAR_MONTH.isin([selected_date])]
